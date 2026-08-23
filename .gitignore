@@ -1,0 +1,26 @@
+# Qt build and local IDE state
+/build-*/
+/*.pro.user*
+/release-v1.0/
+/*.lnk
+
+# Runtime data and settings
+/OnScreenMusic.ini
+/music/
+/lyrics/
+/playlists/
+/tools/update_one_song.local.ini
+
+# Third-party Whisper binaries and models
+/tools/whisper/
+
+# Python and generated reports
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*_report.txt
+*.tmp
+
+# Local editor settings
+/.idea/
+/.vscode/
