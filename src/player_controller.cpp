@@ -34,26 +34,8 @@ PlayerController::PlayerController(QObject *parent)
     : QObject(parent)
 {
     m_libraryRoot = defaultLibraryRoot();
-    AppSettings libraryConfig;
-    const QString configuredRoot =
-        libraryConfig.value(QStringLiteral("Library/Root")).toString().trimmed();
-    if (libraryConfig.status() != QSettings::NoError) {
-        m_startupLibraryRootWarning = QStringLiteral(
-            "无法读取资料目录配置，已临时使用程序所在目录：\n%1")
-            .arg(AppSettings::filePath());
-    } else if (!configuredRoot.isEmpty()) {
-        const QString normalizedRoot = normalizeLibraryRoot(configuredRoot);
-        QString validationError;
-        if (validateLibraryRoot(normalizedRoot, &validationError)) {
-            m_libraryRoot = normalizedRoot;
-        } else {
-            m_startupLibraryRootWarning = QStringLiteral(
-                "配置的资料目录不可用，已临时使用程序所在目录。\n\n%1")
-                .arg(validationError);
-        }
-    }
-
     const AppSettings settings;
+    m_singleRepeat = settings.value(QStringLiteral("Playback/SingleRepeat"), false).toBool();
     m_player.setVolume(qBound(
         0, settings.value(QStringLiteral("Audio/Volume"), 14).toInt(), MaximumVolume));
     m_player.setNotifyInterval(250);
@@ -91,9 +73,7 @@ PlayerController::PlayerController(QObject *parent)
 
 void PlayerController::start()
 {
-    if (!m_startupLibraryRootWarning.isEmpty()) {
-        emit libraryRootWarning(m_startupLibraryRootWarning);
-    }
+    emit singleRepeatChanged(m_singleRepeat);
     scanPlaylists();
     emit volumeChanged(m_player.volume());
     if (m_playlists.isEmpty()) {
@@ -168,38 +148,6 @@ QString PlayerController::libraryRoot() const
 QString PlayerController::defaultLibraryRoot() const
 {
     return QDir::cleanPath(QCoreApplication::applicationDirPath());
-}
-
-
-bool PlayerController::setLibraryRoot(const QString &path, QString *errorMessage)
-{
-    const QString normalizedRoot = normalizeLibraryRoot(path);
-    if (!validateLibraryRoot(normalizedRoot, errorMessage)
-        || !saveLibraryRoot(normalizedRoot, false, errorMessage)) {
-        return false;
-    }
-    if (m_libraryRoot.compare(normalizedRoot, Qt::CaseInsensitive) == 0) {
-        return true;
-    }
-    m_libraryRoot = normalizedRoot;
-    reloadLibraryRoot();
-    return true;
-}
-
-
-bool PlayerController::resetLibraryRoot(QString *errorMessage)
-{
-    const QString defaultRoot = defaultLibraryRoot();
-    if (!validateLibraryRoot(defaultRoot, errorMessage)
-        || !saveLibraryRoot(defaultRoot, true, errorMessage)) {
-        return false;
-    }
-    if (m_libraryRoot.compare(defaultRoot, Qt::CaseInsensitive) == 0) {
-        return true;
-    }
-    m_libraryRoot = defaultRoot;
-    reloadLibraryRoot();
-    return true;
 }
 
 
@@ -381,134 +329,28 @@ void PlayerController::scanLibrary(const QString &playlistPath)
 }
 
 
-void PlayerController::reloadLibraryRoot()
-{
-    const QString previousPlaylistFile =
-        m_currentPlaylistIndex >= 0 && m_currentPlaylistIndex < m_playlists.size()
-            ? m_playlists.at(m_currentPlaylistIndex).fileName
-            : QString();
-
-    savePlaybackState();
-    m_playImmediately = false;
-    m_failureRecoveryScheduled = false;
-    m_player.stop();
-    m_currentIndex = -1;
-    m_currentPlaylistIndex = -1;
-    m_durationMs = 0;
-    m_pendingPositionMs = -1;
-    m_songs.clear();
-    m_lyrics.clear();
-
-    scanPlaylists();
-    if (m_playlists.isEmpty()) {
-        emit playlistsChanged(QStringList(), -1);
-        emit songsChanged(QStringList());
-        emit trackChanged(QString());
-        emit playbackPositionChanged(0, 0);
-        emit playbackChanged(false);
-        emit lyricChanged(QStringLiteral("没有可用的歌单"));
-        AppSettings settings;
-        settings.remove(QStringLiteral("Library/PlaylistFile"));
-        settings.remove(QStringLiteral("Playback/AudioFile"));
-        settings.remove(QStringLiteral("Playback/PositionMs"));
-        return;
-    }
-
-    int playlistIndex = 0;
-    for (int index = 0; index < m_playlists.size(); ++index) {
-        if (m_playlists.at(index).fileName.compare(
-                previousPlaylistFile, Qt::CaseInsensitive) == 0) {
-            playlistIndex = index;
-            break;
-        }
-    }
-    loadPlaylist(playlistIndex);
-    if (m_songs.isEmpty()) {
-        emit trackChanged(QString());
-        emit playbackPositionChanged(0, 0);
-        emit playbackChanged(false);
-        emit lyricChanged(m_libraryMessage);
-        AppSettings settings;
-        settings.remove(QStringLiteral("Playback/AudioFile"));
-        settings.remove(QStringLiteral("Playback/PositionMs"));
-        return;
-    }
-    beginSong(randomIndex(), true, false);
-}
-
-
-QString PlayerController::normalizeLibraryRoot(const QString &path) const
-{
-    const QString cleanedPath = QDir::fromNativeSeparators(path.trimmed());
-    if (QDir::isRelativePath(cleanedPath)) {
-        return QDir::cleanPath(QDir(defaultLibraryRoot()).absoluteFilePath(cleanedPath));
-    }
-    return QDir::cleanPath(QFileInfo(cleanedPath).absoluteFilePath());
-}
-
-
-bool PlayerController::validateLibraryRoot(
-    const QString &path, QString *errorMessage) const
-{
-    const QFileInfo rootInfo(path);
-    if (!rootInfo.isDir() || !rootInfo.isReadable()) {
-        if (errorMessage) {
-            *errorMessage = QStringLiteral("资料目录不存在或无法读取：\n%1").arg(path);
-        }
-        return false;
-    }
-
-    QStringList missingDirectories;
-    const QDir rootDirectory(path);
-    for (const QString &name : {QStringLiteral("playlists"),
-                                QStringLiteral("music"),
-                                QStringLiteral("lyrics")}) {
-        const QFileInfo directoryInfo(rootDirectory.filePath(name));
-        if (!directoryInfo.isDir() || !directoryInfo.isReadable()) {
-            missingDirectories.append(name);
-        }
-    }
-    if (!missingDirectories.isEmpty()) {
-        if (errorMessage) {
-            *errorMessage = QStringLiteral("资料目录缺少可读取的子目录：%1\n%2")
-                                .arg(missingDirectories.join(QStringLiteral("、")), path);
-        }
-        return false;
-    }
-    return true;
-}
-
-
-bool PlayerController::saveLibraryRoot(
-    const QString &path, bool useDefault, QString *errorMessage) const
-{
-    AppSettings libraryConfig;
-    if (useDefault) {
-        libraryConfig.remove(QStringLiteral("Library/Root"));
-    } else {
-        libraryConfig.setValue(
-            QStringLiteral("Library/Root"), QDir::fromNativeSeparators(path));
-    }
-    libraryConfig.sync();
-    if (libraryConfig.status() == QSettings::NoError) {
-        return true;
-    }
-    if (errorMessage) {
-        *errorMessage = QStringLiteral("无法保存资料目录配置：\n%1")
-                            .arg(AppSettings::filePath());
-    }
-    return false;
-}
-
-
 void PlayerController::playRandom()
 {
     if (m_songs.isEmpty()) {
         return;
     }
     savePlaybackState();
-    const int index = randomIndex();
+    const bool repeatCurrent = m_singleRepeat && m_currentIndex >= 0
+        && m_currentIndex < m_songs.size();
+    const int index = repeatCurrent ? m_currentIndex : randomIndex();
+    if (repeatCurrent) {
+        m_player.stop();
+        m_player.setPosition(0);
+    }
     beginSong(index, true, true);
+}
+
+
+void PlayerController::setSingleRepeat(bool enabled)
+{
+    m_singleRepeat = enabled;
+    AppSettings().setValue(QStringLiteral("Playback/SingleRepeat"), enabled);
+    emit singleRepeatChanged(enabled);
 }
 
 

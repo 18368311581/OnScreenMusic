@@ -5,6 +5,9 @@ CONFIG -= app_bundle
 
 TEMPLATE = app
 TARGET = OnScreenMusic
+VERSION = $$cat($$PWD/VERSION, lines)
+QMAKE_TARGET_PRODUCT = On Screen Music
+QMAKE_TARGET_COMPANY = Inseven
 
 DEFINES += QT_DEPRECATED_WARNINGS
 

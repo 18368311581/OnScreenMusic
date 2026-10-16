@@ -10,6 +10,8 @@
 /lyrics/
 /playlists/
 /tools/update_one_song.local.ini
+/MusicWorkshop.local.ini
+/MusicWorkshopWork/
 
 # Third-party Whisper binaries and models
 /tools/whisper/
@@ -18,6 +20,11 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+/.packaging-venv/
+/build-workshop/
+/dist-workshop/
+/packages/
+/.third-party-cache/
 *_report.txt
 *.tmp
 

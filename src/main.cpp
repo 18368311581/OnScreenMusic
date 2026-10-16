@@ -5,10 +5,12 @@
 #include <QAction>
 #include <QApplication>
 #include <QDebug>
+#include <QDesktopServices>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
-#include <QFileDialog>
+#include <QFileInfo>
+#include <QFile>
 #include <QIcon>
 #include <QLabel>
 #include <QMenu>
@@ -17,6 +19,7 @@
 #include <QPushButton>
 #include <QSharedMemory>
 #include <QSystemTrayIcon>
+#include <QUrl>
 #include <QVBoxLayout>
 
 
@@ -24,7 +27,9 @@ int main(int argc, char *argv[])
 {
     QApplication application(argc, argv);
     QApplication::setApplicationName(QStringLiteral("On Screen Music"));
-    QApplication::setApplicationVersion(QStringLiteral("1.0"));
+    QFile versionFile(QStringLiteral(":/VERSION"));
+    versionFile.open(QIODevice::ReadOnly);
+    QApplication::setApplicationVersion(QString::fromUtf8(versionFile.readAll()).trimmed());
     QApplication::setOrganizationName(QStringLiteral("Inseven"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/app_icon.png")));
     QApplication::setQuitOnLastWindowClosed(false);
@@ -49,7 +54,7 @@ int main(int argc, char *argv[])
     tray.setToolTip(QStringLiteral("On Screen Music"));
     QMenu trayMenu;
     QAction *playbackOnlyAction = trayMenu.addAction(QStringLiteral("全部快捷"));
-    QAction *libraryRootAction = trayMenu.addAction(QStringLiteral("资料目录"));
+    QAction *workshopAction = trayMenu.addAction(QStringLiteral("音乐管理"));
     trayMenu.addSeparator();
     QAction *lockAction = trayMenu.addAction(QStringLiteral("锁定窗口"));
     QAction *visibilityAction = trayMenu.addAction(QStringLiteral("隐藏窗口"));
@@ -68,6 +73,8 @@ int main(int argc, char *argv[])
                      &window, &LyricsWindow::setPlaybackPosition);
     QObject::connect(&controller, &PlayerController::volumeChanged,
                      &window, &LyricsWindow::setVolume);
+    QObject::connect(&controller, &PlayerController::singleRepeatChanged,
+                     &window, &LyricsWindow::setSingleRepeat);
     QObject::connect(&controller, &PlayerController::songsChanged,
                      &window, &LyricsWindow::setSongs);
     QObject::connect(&controller, &PlayerController::playlistsChanged,
@@ -112,19 +119,6 @@ int main(int argc, char *argv[])
                          warningDialog.exec();
                      },
                      Qt::QueuedConnection);
-    const auto showLibraryRootWarning = [&window](const QString &message) {
-        QMessageBox warningDialog(
-            QMessageBox::Warning,
-            QStringLiteral("资料目录"),
-            message,
-            QMessageBox::Ok,
-            &window);
-        warningDialog.setWindowFlag(Qt::WindowStaysOnTopHint);
-        warningDialog.setButtonText(QMessageBox::Ok, QStringLiteral("确定"));
-        warningDialog.exec();
-    };
-    QObject::connect(&controller, &PlayerController::libraryRootWarning,
-                     &application, showLibraryRootWarning, Qt::QueuedConnection);
     QObject::connect(&controller, &PlayerController::errorMessage,
                      &application, [&tray](const QString &message) {
                          qWarning().noquote() << message;
@@ -136,6 +130,8 @@ int main(int argc, char *argv[])
                      &controller, &PlayerController::togglePlayback);
     QObject::connect(&window, &LyricsWindow::nextRequested,
                      &controller, &PlayerController::playRandom);
+    QObject::connect(&window, &LyricsWindow::singleRepeatRequested,
+                     &controller, &PlayerController::setSingleRepeat);
     QObject::connect(&window, &LyricsWindow::seekRequested,
                      &controller, &PlayerController::seek);
     QObject::connect(&window, &LyricsWindow::volumeRequested,
@@ -155,48 +151,18 @@ int main(int argc, char *argv[])
                      });
 
     QObject::connect(lockAction, &QAction::triggered, &window, &LyricsWindow::toggleLocked);
-    QObject::connect(libraryRootAction, &QAction::triggered, &application,
-                     [&controller, &window, &tray, showLibraryRootWarning]() {
-        QMessageBox rootDialog(&window);
-        rootDialog.setWindowTitle(QStringLiteral("资料目录"));
-        rootDialog.setWindowFlag(Qt::WindowStaysOnTopHint);
-        rootDialog.setIcon(QMessageBox::Information);
-        rootDialog.setText(QStringLiteral("当前资料目录：\n%1")
-                               .arg(QDir::toNativeSeparators(controller.libraryRoot())));
-        rootDialog.setInformativeText(QStringLiteral(
-            "所选目录中必须包含 playlists、music 和 lyrics 三个子目录。"));
-        auto *chooseButton = rootDialog.addButton(
-            QStringLiteral("选择目录"), QMessageBox::ActionRole);
-        auto *defaultButton = rootDialog.addButton(
-            QStringLiteral("恢复默认"), QMessageBox::ResetRole);
-        rootDialog.addButton(QStringLiteral("取消"), QMessageBox::RejectRole);
-        rootDialog.exec();
-
-        QString errorMessage;
-        bool changed = false;
-        if (rootDialog.clickedButton() == chooseButton) {
-            const QString selectedDirectory = QFileDialog::getExistingDirectory(
-                &window,
-                QStringLiteral("选择资料根目录"),
-                controller.libraryRoot(),
-                QFileDialog::ShowDirsOnly);
-            if (selectedDirectory.isEmpty()) {
-                return;
-            }
-            changed = controller.setLibraryRoot(selectedDirectory, &errorMessage);
-        } else if (rootDialog.clickedButton() == defaultButton) {
-            changed = controller.resetLibraryRoot(&errorMessage);
-        } else {
-            return;
+    QObject::connect(workshopAction, &QAction::triggered, &application, [&window]() {
+        const QDir directory(QCoreApplication::applicationDirPath());
+        QString launcher = directory.filePath(QStringLiteral("MusicWorkshop.exe"));
+        if (!QFileInfo::exists(launcher)) {
+            launcher = directory.filePath(QStringLiteral("MusicWorkshop.vbs"));
         }
-
-        if (!changed) {
-            showLibraryRootWarning(errorMessage);
-            return;
+        if (!QFileInfo::exists(launcher)
+            || !QDesktopServices::openUrl(QUrl::fromLocalFile(launcher))) {
+            QMessageBox::warning(
+                &window, QStringLiteral("音乐管理"),
+                QStringLiteral("无法打开音乐管理。请将 MusicWorkshop 启动文件和程序放在播放器同目录中。"));
         }
-        tray.showMessage(QStringLiteral("资料目录"),
-                         QStringLiteral("资料目录已切换，播放器保持暂停。"),
-                         QSystemTrayIcon::Information, 4000);
     });
     QObject::connect(visibilityAction, &QAction::triggered, &application,
                      [&window, visibilityAction]() {
@@ -221,15 +187,16 @@ int main(int argc, char *argv[])
         contentLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         contentLabel->setText(QStringLiteral(
             "<h2>On Screen Music v%1</h2>"
-            "<p><b>制作时间：</b>2026-08-12—2026-08-14<br>"
+            "<p><b>更新日期：</b>2026-10-16<br>"
             "<b>制作者：</b>ChatGPT &amp; 江沛宸</p>"
             "<p><b>简易用法</b></p>"
             "<ul>"
             "<li>歌词层可播放/暂停、切歌、调节音量、选歌、选歌单和拖动进度。</li>"
+            "<li>选歌单后的 ↻× / ↻1 按钮关闭/开启单曲循环；开启后下一首及自然结束均重播当前歌曲。</li>"
             "<li>点击“刷新”可重新读取歌单和当前歌词，不需要重启程序。</li>"
             "<li>未隐藏时，可在任意位置按住鼠标中键拖动窗口。</li>"
             "<li>隐藏后歌词层鼠标穿透；正常模式可按左Ctrl+Num6 恢复，精简模式请从托盘恢复。</li>"
-            "<li>歌单、音乐和歌词分别位于资料根目录的 playlists、music、lyrics；可从托盘“资料目录”更改。</li>"
+            "<li>歌单、音乐和歌词分别位于软件同目录的 playlists、music、lyrics；从托盘“音乐管理”可处理歌曲、编辑歌词和整理歌单，保存后点击刷新。</li>"
             "<li>LRC 第一行写 #INSTRUMENTAL，或没有有效歌词时，主歌词区显示 _。</li>"
             "</ul>"
             "<p><b>快捷键（NumLock 开关均有效）</b></p>"
@@ -241,7 +208,9 @@ int main(int argc, char *argv[])
             "<li>左Ctrl+Num6：隐藏/恢复控件。</li>"
             "</ul>"
             "<p>托盘显示“全部快捷”时五组快捷键均启用；点击后切换为"
-            "“播放专用”，此时播放器仅响应左Ctrl+Num5。右Ctrl不参与播放器快捷键，快捷键也不会阻止当前软件同时响应。</p>")
+            "“播放专用”，此时播放器仅响应左Ctrl+Num5。右Ctrl不参与播放器快捷键，快捷键也不会阻止当前软件同时响应。</p>"
+            "<p>Copyright © 2026 Jiang Peichen (Inseven)。项目采用 MIT 许可证。"
+            "本软件使用 Qt（Copyright The Qt Company Ltd.），按 LGPLv3 使用；许可文本和对应源码说明见软件目录 ThirdPartyNotices。</p>")
             .arg(QApplication::applicationVersion()));
 
         auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &aboutDialog);

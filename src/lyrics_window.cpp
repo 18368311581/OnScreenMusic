@@ -93,6 +93,8 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     m_nextButton = new QPushButton(QStringLiteral("⏭"), m_controlPanel);
     m_songButton = new QPushButton(QStringLiteral("选歌"), m_controlPanel);
     m_playlistButton = new QPushButton(QStringLiteral("选歌单"), m_controlPanel);
+    m_repeatButton = new QPushButton(QStringLiteral("↻×"), m_controlPanel);
+    m_repeatButton->setCheckable(true);
     m_refreshButton = new QPushButton(QStringLiteral("刷新"), m_controlPanel);
     m_volumeButton = new QPushButton(QStringLiteral("🔊"), m_controlPanel);
     m_lockButton = new QPushButton(QStringLiteral("隐藏"), m_controlPanel);
@@ -102,6 +104,7 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     m_volumeButton->setToolTip(QStringLiteral("音量"));
     m_songButton->setToolTip(QStringLiteral("选择歌曲"));
     m_playlistButton->setToolTip(QStringLiteral("选择歌单"));
+    m_repeatButton->setToolTip(QStringLiteral("单曲循环已关闭，点击开启"));
     m_refreshButton->setToolTip(QStringLiteral("重新读取歌单和歌词"));
     m_lockButton->setToolTip(QStringLiteral("隐藏控件并启用鼠标穿透"));
     m_closeButton->setToolTip(QStringLiteral("退出程序"));
@@ -110,6 +113,7 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     mediaFont.setPixelSize(26);
     m_playButton->setFont(mediaFont);
     m_nextButton->setFont(mediaFont);
+    m_repeatButton->setFont(mediaFont);
     QFont volumeFont(QStringLiteral("Segoe UI Emoji"));
     volumeFont.setPixelSize(25);
     m_volumeButton->setFont(volumeFont);
@@ -120,6 +124,7 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     m_volumeButton->setFixedSize(controlButtonSize);
     m_songButton->setFixedSize(controlButtonSize);
     m_playlistButton->setFixedSize(controlButtonSize);
+    m_repeatButton->setFixedSize(controlButtonSize);
     m_refreshButton->setFixedSize(controlButtonSize);
     m_lockButton->setFixedSize(controlButtonSize);
     m_closeButton->setFixedSize(controlButtonSize);
@@ -150,6 +155,7 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     buttonLayout->addWidget(m_volumeButton);
     buttonLayout->addWidget(m_songButton);
     buttonLayout->addWidget(m_playlistButton);
+    buttonLayout->addWidget(m_repeatButton);
     buttonLayout->addWidget(m_refreshButton);
     buttonLayout->addWidget(m_lockButton);
     buttonLayout->addWidget(m_closeButton);
@@ -219,6 +225,10 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     connect(m_songButton, &QPushButton::clicked, this, &LyricsWindow::showSongSelector);
     connect(m_playlistButton, &QPushButton::clicked,
             this, &LyricsWindow::showPlaylistSelector);
+    connect(m_repeatButton, &QPushButton::toggled, this, [this](bool enabled) {
+        setSingleRepeat(enabled);
+        emit singleRepeatRequested(enabled);
+    });
     connect(m_refreshButton, &QPushButton::clicked,
             this, &LyricsWindow::refreshRequested);
     connect(m_volumeButton, &QPushButton::clicked, this, [this]() {
@@ -243,6 +253,16 @@ LyricsWindow::LyricsWindow(QWidget *parent)
     for (QWidget *child : childWidgets) {
         child->installEventFilter(this);
     }
+}
+
+
+void LyricsWindow::setSingleRepeat(bool enabled)
+{
+    const QSignalBlocker blocker(m_repeatButton);
+    m_repeatButton->setChecked(enabled);
+    m_repeatButton->setText(enabled ? QStringLiteral("↻1") : QStringLiteral("↻×"));
+    m_repeatButton->setToolTip(enabled ? QStringLiteral("单曲循环已开启，点击关闭")
+                                      : QStringLiteral("单曲循环已关闭，点击开启"));
 }
 
 

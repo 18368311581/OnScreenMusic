@@ -1,0 +1,2 @@
+# UI dependency only; processing scripts continue to use Python's standard library.
+PySide6-Essentials==6.11.2

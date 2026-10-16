@@ -1,0 +1,128 @@
+[
+  {
+    "component": "Qt5-qtbase",
+    "version": "5.14.0",
+    "url": "https://codeload.github.com/qt/qtbase/tar.gz/refs/tags/v5.14.0",
+    "archive": "Qt5-qtbase-5.14.0.tar.gz",
+    "sha256": "a3afa357afedede755f92176569cc37e28b1171d3cb8c84526d09915f14c921d",
+    "bytes": 66746257,
+    "notice_files": 118
+  },
+  {
+    "component": "Qt5-qtmultimedia",
+    "version": "5.14.0",
+    "url": "https://codeload.github.com/qt/qtmultimedia/tar.gz/refs/tags/v5.14.0",
+    "archive": "Qt5-qtmultimedia-5.14.0.tar.gz",
+    "sha256": "dd3f8ac4ff00b829a11bf41778738c346037beb2bb1c828c154e5f7ca65b0fcf",
+    "bytes": 5791472,
+    "notice_files": 6
+  },
+  {
+    "component": "Qt6-qtbase",
+    "version": "6.11.2",
+    "url": "https://codeload.github.com/qt/qtbase/tar.gz/refs/tags/v6.11.2",
+    "archive": "Qt6-qtbase-6.11.2.tar.gz",
+    "sha256": "06cd7aa6b3ab19cb5a1664a2891ef0df960f78c97fa31b80b1d6d7ee70688414",
+    "bytes": 67744682,
+    "notice_files": 155
+  },
+  {
+    "component": "Qt6-qtsvg",
+    "version": "6.11.2",
+    "url": "https://codeload.github.com/qt/qtsvg/tar.gz/refs/tags/v6.11.2",
+    "archive": "Qt6-qtsvg-6.11.2.tar.gz",
+    "sha256": "52a89c4efcb0cbe57bf85c71f5db50ef59184eeadf9972351202a9261a9bfa6e",
+    "bytes": 2630778,
+    "notice_files": 5
+  },
+  {
+    "component": "Qt6-qtimageformats",
+    "version": "6.11.2",
+    "url": "https://codeload.github.com/qt/qtimageformats/tar.gz/refs/tags/v6.11.2",
+    "archive": "Qt6-qtimageformats-6.11.2.tar.gz",
+    "sha256": "76f5477d0216f37a5f44ddbca1decd4df245c2db39baccb1025eb66cfe50d8f8",
+    "bytes": 2673163,
+    "notice_files": 6
+  },
+  {
+    "component": "PySide-Shiboken",
+    "version": "6.11.2",
+    "url": "https://codeload.github.com/pyside/pyside-setup/tar.gz/refs/tags/v6.11.2",
+    "archive": "PySide-Shiboken-6.11.2.tar.gz",
+    "sha256": "7a2a395498b738b715e70a4c1c4f60f9f422c4b40065d31fd66a9bc99c6200d1",
+    "bytes": 21033362,
+    "notice_files": 23
+  },
+  {
+    "component": "CPython",
+    "version": "3.12.2",
+    "url": "https://codeload.github.com/python/cpython/tar.gz/refs/tags/v3.12.2",
+    "archive": "CPython-3.12.2.tar.gz",
+    "sha256": "6a7643423ce81d95ab798fc7ca91d3e487f8538467d439c4a64261cac3fcf77b",
+    "bytes": 27583112,
+    "notice_files": 8
+  },
+  {
+    "component": "PyInstaller",
+    "version": "6.22.3",
+    "url": "https://codeload.github.com/pyinstaller/pyinstaller/tar.gz/refs/tags/v6.22.3",
+    "archive": "PyInstaller-6.22.3.tar.gz",
+    "sha256": "f07fc92f550f6ece2ff4e6c3bddb799601abcac2bf79d4e410a326c3123d82da",
+    "bytes": 3707378,
+    "notice_files": 5
+  },
+  {
+    "component": "OpenSSL",
+    "version": "3.0.13",
+    "url": "https://codeload.github.com/openssl/openssl/tar.gz/refs/tags/openssl-3.0.13",
+    "archive": "OpenSSL-3.0.13.tar.gz",
+    "sha256": "e74504ed7035295ec7062b1da16c15b57ff2a03cd2064a28d8c39458cacc45fc",
+    "bytes": 15440228,
+    "notice_files": 3
+  },
+  {
+    "component": "zlib",
+    "version": "1.3.1",
+    "url": "https://codeload.github.com/madler/zlib/tar.gz/refs/tags/v1.3.1",
+    "archive": "zlib-1.3.1.tar.gz",
+    "sha256": "17e88863f3600672ab49182f217281b6fc4d3c762bde361935e436a95214d05c",
+    "bytes": 1572744,
+    "notice_files": 2
+  },
+  {
+    "component": "libexpat",
+    "version": "2.5.0",
+    "url": "https://codeload.github.com/libexpat/libexpat/tar.gz/refs/tags/R_2_5_0",
+    "archive": "libexpat-2.5.0.tar.gz",
+    "sha256": "ab00ee05c7067fd10a35c5d2a4922ebba746ddd50ff83b79c828da17bbdf1757",
+    "bytes": 8320988,
+    "notice_files": 2
+  },
+  {
+    "component": "libffi",
+    "version": "3.4.4",
+    "url": "https://codeload.github.com/libffi/libffi/tar.gz/refs/tags/v3.4.4",
+    "archive": "libffi-3.4.4.tar.gz",
+    "sha256": "828639972716ed18833df7b659b32060591fe0eb625a8d34078920d33c2dc867",
+    "bytes": 574196,
+    "notice_files": 2
+  },
+  {
+    "component": "GCC-runtime",
+    "version": "7.3.0",
+    "url": "https://ftp.gnu.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.xz",
+    "archive": "GCC-runtime-7.3.0.tar.xz",
+    "sha256": "832ca6ae04636adbb430e865a1451adf6979ab44ca1c8374f61fba65645ce15c",
+    "bytes": 62462388,
+    "notice_files": 23
+  },
+  {
+    "component": "MinGW-w64",
+    "version": "6.0.0",
+    "url": "https://codeload.github.com/mingw-w64/mingw-w64/tar.gz/refs/tags/v6.0.0",
+    "archive": "MinGW-w64-6.0.0.tar.gz",
+    "sha256": "110311b84a5ee5949785105448b053f481e5c9bf237845e997f6e62045b8c690",
+    "bytes": 12461301,
+    "notice_files": 16
+  }
+]

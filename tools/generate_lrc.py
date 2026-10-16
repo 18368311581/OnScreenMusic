@@ -166,6 +166,12 @@ def locate_ffmpeg(explicit_path: str | None) -> Path:
     raise StartupError("找不到 FFmpeg。请使用 --ffmpeg 指定 ffmpeg.exe。")
 
 
+def bundled_whisper_root() -> Path:
+    project = Path(__file__).resolve().parents[1]
+    deployed = project / "release-v1.0" / "tools" / "whisper"
+    return deployed if deployed.is_dir() else project / "tools" / "whisper"
+
+
 def locate_whisper(explicit_path: str | None) -> Path:
     if explicit_path:
         return resolve_explicit_file(explicit_path, "--whisper")
@@ -174,7 +180,7 @@ def locate_whisper(explicit_path: str | None) -> Path:
     if from_path:
         return Path(from_path).resolve()
 
-    tool_root = Path(__file__).resolve().parent / "whisper"
+    tool_root = bundled_whisper_root()
     candidates = (
         tool_root / "whisper-cli.exe",
         tool_root / "Release" / "whisper-cli.exe",
@@ -192,7 +198,7 @@ def locate_model(explicit_path: str | None) -> Path:
     if explicit_path:
         return resolve_explicit_file(explicit_path, "--model")
 
-    tool_root = Path(__file__).resolve().parent / "whisper"
+    tool_root = bundled_whisper_root()
     candidates = tuple(
         candidate
         for model_name in (STRONGEST_MODEL_NAME, FALLBACK_MODEL_NAME)

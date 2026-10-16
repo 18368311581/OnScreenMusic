@@ -26,6 +26,7 @@ public:
     void setPlaylists(const QStringList &titles, int currentIndex);
 
 public slots:
+    void setSingleRepeat(bool enabled);
     void setLyric(const QString &text);
     void setTrack(const QString &title);
     void setPlaybackState(bool playing);
@@ -44,6 +45,7 @@ signals:
     void volumeRequested(int volume);
     void songRequested(int index);
     void playlistRequested(int index);
+    void singleRepeatRequested(bool enabled);
     void refreshRequested();
     void closeRequested();
     void lockedChanged(bool locked);
@@ -76,6 +78,7 @@ private:
     QPushButton *m_nextButton = nullptr;
     QPushButton *m_songButton = nullptr;
     QPushButton *m_playlistButton = nullptr;
+    QPushButton *m_repeatButton = nullptr;
     QPushButton *m_refreshButton = nullptr;
     QPushButton *m_volumeButton = nullptr;
     QPushButton *m_lockButton = nullptr;

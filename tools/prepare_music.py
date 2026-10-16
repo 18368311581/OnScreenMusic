@@ -90,27 +90,38 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="整理歌单并输出响度统一的 320 kbps MP3 与 UTF-8 LRC。"
     )
-    parser.add_argument("--source", required=True, help="原始歌单目录")
+    parser.add_argument("--source", required=True, help="单个媒体文件或原始歌单目录")
     parser.add_argument("--output", required=True, help="标准化歌单输出目录")
     parser.add_argument("--overwrite", action="store_true", help="覆盖已存在的派生文件")
     parser.add_argument("--ffmpeg", help="显式指定 ffmpeg.exe 路径")
     return parser.parse_args(argv)
 
 
-def resolve_directories(source_arg: str, output_arg: str) -> tuple[Path, Path]:
+def resolve_source_and_output(source_arg: str, output_arg: str) -> tuple[Path, Path]:
     source = Path(source_arg).expanduser()
     if not source.exists():
-        raise StartupError(f"源目录不存在：{source}")
-    if not source.is_dir():
-        raise StartupError(f"源路径不是目录：{source}")
+        raise StartupError(f"源路径不存在：{source}")
+    if not source.is_file() and not source.is_dir():
+        raise StartupError(f"源路径不是普通文件或目录：{source}")
 
     source = source.resolve()
+    if source.is_file() and source.suffix.casefold() not in MEDIA_EXTENSIONS:
+        raise StartupError(f"不支持该媒体文件类型：{source.suffix or '无扩展名'}")
+
     output = Path(output_arg).expanduser().resolve(strict=False)
     if output.exists() and not output.is_dir():
         raise StartupError(f"输出路径不是目录：{output}")
 
-    if source == output or source in output.parents or output in source.parents:
+    if source.is_dir() and (
+        source == output or source in output.parents or output in source.parents
+    ):
         raise StartupError("源目录和输出目录不能相同，也不能互相包含。")
+    if source.is_file():
+        audio_target = (output / f"{sanitize_stem(source.stem, 1)}.mp3").resolve(
+            strict=False
+        )
+        if os.path.normcase(str(source)) == os.path.normcase(str(audio_target)):
+            raise StartupError("单文件输出会覆盖原始 MP3，请选择其他输出目录。")
     return source, output
 
 
@@ -170,6 +181,18 @@ def find_matching_lrc(audio: Path) -> Path | None:
 
 
 def discover_tracks(source: Path) -> list[Track]:
+    if source.is_file():
+        if source.suffix.casefold() not in MEDIA_EXTENSIONS:
+            return []
+        return [
+            Track(
+                source=source,
+                relative_source=Path(source.name),
+                output_stem=sanitize_stem(source.stem, 1),
+                lyric_source=find_matching_lrc(source),
+            )
+        ]
+
     audio_files = [
         item
         for item in source.rglob("*")
@@ -258,6 +281,13 @@ def normalize_audio(ffmpeg: Path, source: Path, target: Path) -> None:
         ]
     )
     if first_pass.returncode != 0:
+        if "Cannot determine format of input" in first_pass.stderr and "after EOF" in first_pass.stderr:
+            raise TrackError(
+                "无法解码源文件：FFmpeg 读到文件末尾仍无法确定音频格式。"
+                "文件可能损坏、扩展名与实际格式不符或经过加密；"
+                "请从来源软件导出可播放的标准音频，改扩展名不能转换格式。"
+                f" FFmpeg：{compact_error(first_pass.stderr)}"
+            )
         raise TrackError(f"响度分析失败：{compact_error(first_pass.stderr)}")
     measured = parse_loudness_measurements(first_pass.stderr)
 
@@ -300,6 +330,14 @@ def normalize_audio(ffmpeg: Path, source: Path, target: Path) -> None:
                 "libmp3lame",
                 "-b:a",
                 "320k",
+                # On Screen Music uses the filename and separate LRC only.  Do not
+                # carry editor-specific ID3/XMP data into the player library.
+                "-map_metadata",
+                "-1",
+                "-id3v2_version",
+                "0",
+                "-write_id3v1",
+                "0",
                 str(temporary),
             ]
         )
@@ -340,7 +378,16 @@ def compact_error(stderr: str) -> str:
     lines = [line.strip() for line in stderr.splitlines() if line.strip()]
     if not lines:
         return "未知错误"
-    return " | ".join(lines[-4:])
+    # The final lines often describe shutdown rather than the original failure.
+    causes = [
+        line for line in lines
+        if re.search(r"cannot|could not|error|invalid|failed|not found|does not contain", line, re.IGNORECASE)
+        and not re.search(
+            r"Terminating thread|Task finished|Could not open encoder before EOF|Conversion failed",
+            line, re.IGNORECASE,
+        )
+    ]
+    return " | ".join(causes[:4] if causes else lines[-4:])
 
 
 def process_track(
@@ -419,7 +466,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     try:
-        source, output = resolve_directories(args.source, args.output)
+        source, output = resolve_source_and_output(args.source, args.output)
         ffmpeg = locate_ffmpeg(args.ffmpeg)
         validate_ffmpeg(ffmpeg)
         tracks = discover_tracks(source)
@@ -431,7 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"启动失败：{exc}", file=sys.stderr)
         return 2
 
-    print(f"源目录：{source}")
+    print(f"源输入：{source}")
     print(f"输出目录：{output}")
     print(f"FFmpeg：{ffmpeg}")
     print(f"发现媒体文件：{len(tracks)} 个")

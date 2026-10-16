@@ -36,11 +36,10 @@ public:
     const QVector<Playlist> &playlists() const;
     QString libraryRoot() const;
     QString defaultLibraryRoot() const;
-    bool setLibraryRoot(const QString &path, QString *errorMessage = nullptr);
-    bool resetLibraryRoot(QString *errorMessage = nullptr);
 
 public slots:
     void playRandom();
+    void setSingleRepeat(bool enabled);
     void playSong(int index);
     void selectPlaylist(int index);
     void refreshLibrary();
@@ -52,6 +51,7 @@ public slots:
     void savePlaybackState();
 
 signals:
+    void singleRepeatChanged(bool enabled);
     void lyricChanged(const QString &text);
     void trackChanged(const QString &title);
     void playbackChanged(bool playing);
@@ -62,7 +62,6 @@ signals:
     void playlistLoadWarnings(const QString &playlistName,
                               const QStringList &warnings,
                               int loadedSongCount);
-    void libraryRootWarning(const QString &message);
     void errorMessage(const QString &message);
 
 private slots:
@@ -75,11 +74,6 @@ private:
     void scanPlaylists();
     void loadPlaylist(int index);
     void scanLibrary(const QString &playlistPath);
-    void reloadLibraryRoot();
-    QString normalizeLibraryRoot(const QString &path) const;
-    bool validateLibraryRoot(const QString &path, QString *errorMessage) const;
-    bool saveLibraryRoot(const QString &path, bool useDefault,
-                         QString *errorMessage) const;
     void beginSong(int index, bool resetFailures, bool playImmediately,
                    qint64 initialPositionMs = 0);
     void applyPendingPosition();
@@ -97,7 +91,6 @@ private:
     QVector<LrcLine> m_lyrics;
     QSet<int> m_failedSongs;
     QString m_libraryRoot;
-    QString m_startupLibraryRootWarning;
     QString m_libraryMessage = QStringLiteral("播放列表中没有可播放的歌曲");
     int m_currentIndex = -1;
     int m_currentPlaylistIndex = -1;
@@ -108,4 +101,5 @@ private:
     bool m_failureRecoveryScheduled = false;
     bool m_playImmediately = false;
     bool m_instrumental = false;
+    bool m_singleRepeat = false;
 };
