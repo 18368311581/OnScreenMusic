@@ -90,12 +90,13 @@ lyrics/*.lrc
 ### 固定物理小键盘快捷键
 
 - `左Ctrl+Num1`：回退 5 秒。
+- `左Ctrl+Num2`：隐藏/显示整个窗口。
 - `左Ctrl+Num3`：快进 5 秒。
 - `左Ctrl+Num4`：下一首。
 - `左Ctrl+Num5`：播放/暂停。
 - `左Ctrl+Num6`：隐藏/恢复。
 
-使用 Windows Raw Input 读取物理扫描码，仅左 Ctrl 有效，右 Ctrl 完全忽略，NumLock 开关均有效；事件驱动、不轮询、不吞键，前台应用可同时响应。Num1/3/4 按下立即执行，500 ms 后重复；Num1/3 每 200 ms，Num4 每 700 ms。Num5/6 不重复，释放数字键或左 Ctrl 后停止。“播放专用”默认关闭；启用后播放器仅处理 Num5。
+使用 Windows Raw Input 读取物理扫描码，仅左 Ctrl 有效，右 Ctrl 完全忽略，NumLock 开关均有效；事件驱动、不轮询、不吞键，前台应用可同时响应。Num1/3/4 按下立即执行，500 ms 后重复；Num1/3 每 200 ms，Num4 每 700 ms。Num2/5/6 不重复，释放数字键或左 Ctrl 后停止。“播放专用”默认关闭；启用后播放器仅处理 Num5。
 
 ## 预处理工具边界
 

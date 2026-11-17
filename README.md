@@ -62,9 +62,10 @@ OnScreenMusic/
 | 按键 | 功能 |
 | --- | --- |
 | 左 Ctrl + Num1 / Num3 | 回退／快进 5 秒 |
+| 左 Ctrl + Num2 | 隐藏／显示整个窗口 |
 | 左 Ctrl + Num4 | 下一首；单曲循环时重播当前歌曲 |
 | 左 Ctrl + Num5 | 播放／暂停 |
-| 左 Ctrl + Num6 | 隐藏／恢复 |
+| 左 Ctrl + Num6 | 隐藏／恢复歌词层控件（鼠标穿透） |
 
 仅左 Ctrl 和物理小键盘有效，NumLock 开关均可。“播放专用”仅响应 Num5。
 

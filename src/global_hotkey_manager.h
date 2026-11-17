@@ -31,6 +31,7 @@ signals:
     void lockToggleRequested();
     void seekBackwardRequested();
     void seekForwardRequested();
+    void windowVisibilityRequested();
 
 private:
     void handleRawInput(void *rawInputHandle);
@@ -38,8 +39,8 @@ private:
     void scheduleRepeat(int action, quint64 generation, int delayMs);
 
     QWindow *m_inputWindow = nullptr;
-    quint64 m_pressGeneration[6] = {};
-    bool m_keyDown[6] = {};
+    quint64 m_pressGeneration[7] = {};
+    bool m_keyDown[7] = {};
     bool m_leftControlDown = false;
     bool m_rawInputRegistered = false;
     bool m_nativeEventFilterInstalled = false;

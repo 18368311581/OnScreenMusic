@@ -17,7 +17,8 @@ enum HotkeyId {
     NextHotkey,
     LockHotkey,
     SeekBackwardHotkey,
-    SeekForwardHotkey
+    SeekForwardHotkey,
+    WindowVisibilityHotkey
 };
 
 #ifdef Q_OS_WIN
@@ -35,6 +36,8 @@ int actionForNumpadScanCode(USHORT scanCode, USHORT flags)
         return LockHotkey;
     case 0x4F:
         return SeekBackwardHotkey;
+    case 0x50:
+        return WindowVisibilityHotkey;
     case 0x51:
         return SeekForwardHotkey;
     default:
@@ -95,7 +98,7 @@ QStringList GlobalHotkeyManager::registerHotkeys()
     keyboard.dwFlags = RIDEV_INPUTSINK;
     keyboard.hwndTarget = reinterpret_cast<HWND>(m_inputWindow->winId());
     if (!RegisterRawInputDevices(&keyboard, 1, sizeof(keyboard))) {
-        failures.append(QStringLiteral("左Ctrl+Num1/3/4/5/6（Raw Input 错误 %1）")
+        failures.append(QStringLiteral("左Ctrl+Num1/2/3/4/5/6（Raw Input 错误 %1）")
                             .arg(GetLastError()));
         m_inputWindow->destroy();
         delete m_inputWindow;
@@ -199,7 +202,7 @@ bool GlobalHotkeyManager::isPlaybackOnlyMode() const
 
 void GlobalHotkeyManager::beginHotkey(int action)
 {
-    if (action <= 0 || action >= 6
+    if (action <= 0 || action >= 7
         || (m_playbackOnlyMode && action != PlayPauseHotkey)) {
         return;
     }
@@ -216,7 +219,7 @@ void GlobalHotkeyManager::beginHotkey(int action)
 
 void GlobalHotkeyManager::endHotkey(int action)
 {
-    if (action > 0 && action < 6) {
+    if (action > 0 && action < 7) {
         ++m_pressGeneration[action];
     }
 }
@@ -261,6 +264,9 @@ void GlobalHotkeyManager::dispatchHotkey(int action)
     case SeekForwardHotkey:
         emit seekForwardRequested();
         break;
+    case WindowVisibilityHotkey:
+        emit windowVisibilityRequested();
+        break;
     default:
         break;
     }
@@ -270,7 +276,7 @@ void GlobalHotkeyManager::dispatchHotkey(int action)
 void GlobalHotkeyManager::scheduleRepeat(int action, quint64 generation, int delayMs)
 {
     QTimer::singleShot(delayMs, this, [this, action, generation]() {
-        if (action <= 0 || action >= 6
+        if (action <= 0 || action >= 7
             || m_pressGeneration[action] != generation
             || m_playbackOnlyMode) {
             return;

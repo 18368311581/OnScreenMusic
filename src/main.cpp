@@ -202,12 +202,13 @@ int main(int argc, char *argv[])
             "<p><b>快捷键（NumLock 开关均有效）</b></p>"
             "<ul>"
             "<li>左Ctrl+Num1：回退 5 秒；长按 500 ms 后每 200 ms 重复。</li>"
+            "<li>左Ctrl+Num2：隐藏/显示整个窗口。</li>"
             "<li>左Ctrl+Num3：快进 5 秒；长按 500 ms 后每 200 ms 重复。</li>"
             "<li>左Ctrl+Num4：下一首；长按 500 ms 后每 700 ms 重复。</li>"
             "<li>左Ctrl+Num5：播放/暂停。</li>"
             "<li>左Ctrl+Num6：隐藏/恢复控件。</li>"
             "</ul>"
-            "<p>托盘显示“全部快捷”时五组快捷键均启用；点击后切换为"
+            "<p>托盘显示“全部快捷”时六组快捷键均启用；点击后切换为"
             "“播放专用”，此时播放器仅响应左Ctrl+Num5。右Ctrl不参与播放器快捷键，快捷键也不会阻止当前软件同时响应。</p>"
             "<p>Copyright © 2026 Jiang Peichen (Inseven)。项目采用 MIT 许可证。"
             "本软件使用 Qt（Copyright The Qt Company Ltd.），按 LGPLv3 使用；许可文本和对应源码说明见软件目录 ThirdPartyNotices。</p>")
@@ -252,6 +253,8 @@ int main(int argc, char *argv[])
                      &controller, &PlayerController::playRandom);
     QObject::connect(&hotkeys, &GlobalHotkeyManager::lockToggleRequested,
                      &window, &LyricsWindow::toggleLocked);
+    QObject::connect(&hotkeys, &GlobalHotkeyManager::windowVisibilityRequested,
+                     visibilityAction, &QAction::trigger);
     QObject::connect(&hotkeys, &GlobalHotkeyManager::seekBackwardRequested,
                      &application, [&controller]() { controller.seekRelative(-5000); });
     QObject::connect(&hotkeys, &GlobalHotkeyManager::seekForwardRequested,
